@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # Daha stabil bir Ubuntu sürümü kullanıyoruz
 
     steps:
     - uses: actions/checkout@v4
@@ -16,23 +16,26 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install dependencies
+    - name: Sistemin İhtiyacı Olan Programları Kur
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+
+    - name: Python Paketlerini Kur
       run: |
         python -m pip install --upgrade pip
-        pip install buildozer cython
+        pip install buildozer cython virtualenv
 
-    - name: Accept Android Licenses & Build
+    - name: Atlas APK Derleme İşlemi
       run: |
         buildozer init || true
         sed -i 's/#requirements = python3,kivy/requirements = python3,kivy/g' buildozer.spec
         sed -i 's/#package.name = myapp/package.name = atlas/g' buildozer.spec
         sed -i 's/#package.domain = org.test/package.domain = org.atlas/g' buildozer.spec
-        # Android SDK lisanslarını otomatik kabul et
-        mkdir -p ~/.android
-        echo '### Doo not remove this file unless you want to update SDK lib licenses' > ~/.android/repositories.cfg
+        sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/g' buildozer.spec
         yes | buildozer -v android debug
 
-    - name: Upload APK
+    - name: APK Dosyasını Yükle
       uses: actions/upload-artifact@v4
       with:
         name: package
