@@ -1,0 +1,37 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install buildozer cython
+
+    - name: Build with Buildozer
+      run: |
+        buildozer init || true
+        # buildozer.spec dosyasını otomatik ayarlayalım
+        sed -i 's/#requirements = python3,kivy/requirements = python3,kivy/g' buildozer.spec
+        sed -i 's/#package.name = myapp/package.name = atlas/g' buildozer.spec
+        sed -i 's/#package.domain = org.test/package.domain = org.atlas/g' buildozer.spec
+        buildozer -v android debug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: package
+        path: bin/*.apk
